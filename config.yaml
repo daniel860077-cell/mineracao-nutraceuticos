@@ -3,17 +3,13 @@
 # ============================================================
 
 # Palavras-chave do nicho. Alimentam as buscas em todas as fontes.
+# Nicho padrão (pode ser trocado pelo Telegram com /buscar).
+# Mantido enxuto p/ economizar crédito no plano FREE da Apify.
 keywords:
-  - emagrecedor
   - colágeno
+  - emagrecedor
   - melatonina
-  - biotina
-  - termogênico
-  - cápsulas
-  - psyllium
-  - magnésio dimalato
   - creatina
-  - ômega 3
 
 # Quantos produtos entregar por dia (PRD pede 5-6)
 daily_count: 6
@@ -47,8 +43,11 @@ sources:
     min_active_days: 5
     count_per_keyword: 30
 
+  # --- Marketplaces: FASE 2 (desativados p/ economizar crédito FREE) ---
+  # O actor atual de ML não traz nº de vendas e devolve poucos resultados;
+  # exige um actor melhor (provavelmente pago) antes de reativar.
   mercado_livre:
-    enabled: true
+    enabled: false
     actor_id: "karamelo/mercadolivre-scraper-brasil-portugues"  # BR, 36k+ runs
     # Mínimo de vendas declaradas para considerar tração
     min_sales: 50
@@ -56,13 +55,13 @@ sources:
     promoted: true        # incluir patrocinados
 
   shopee:
-    enabled: true
+    enabled: false
     actor_id: "gio21/shopee-scraper"  # 11k+ runs
     min_sales: 100
     max_items_per_keyword: 30
 
   amazon:
-    enabled: true
+    enabled: false
     actor_id: "junglee/amazon-bestsellers"  # 200k+ runs
     # Categoria Saúde e Cuidados Pessoais (BR). A URL deve conter "bestsellers".
     category_url: "https://www.amazon.com.br/gp/bestsellers/hpc/"
