@@ -9,14 +9,29 @@ from .models import Product
 from .scoring import rank
 from .sources import REGISTRY
 from .sources.base import ApifyRunner
+from .state import effective_keywords, load_state, save_state
+from .telegram_commands import process_commands
 
 log = logging.getLogger("miner.pipeline")
 
 
 def run(cfg: Dict[str, Any], dry_run: bool = False) -> List[Product]:
     secrets = cfg["secrets"]
-    keywords = cfg["keywords"]
     runner = ApifyRunner(secrets["apify_token"])
+
+    # 0) Lê comandos do Telegram (ex: /buscar ...) e aplica o nicho escolhido
+    state = load_state()
+    state, changed = process_commands(secrets, state)
+    if changed:
+        save_state(state)
+    keywords = effective_keywords(state, cfg["keywords"])
+
+    # Categoria de bestsellers da Amazon pode ser sobrescrita por nicho
+    amz_url = state.get("amazon_category_url")
+    if amz_url and "amazon" in cfg["sources"]:
+        cfg["sources"]["amazon"]["category_url"] = amz_url
+
+    log.info("Nicho desta execução: %s", ", ".join(keywords))
 
     # 1) Coleta em todas as fontes habilitadas
     collected: List[Product] = []

@@ -10,6 +10,15 @@ from ..models import Product
 log = logging.getLogger("miner.sources")
 
 
+def _dataset_id(run: Any) -> str | None:
+    """Pega o defaultDatasetId tolerando dict (apify-client 1.x) ou objeto (2.x)."""
+    if not run:
+        return None
+    if isinstance(run, dict):
+        return run.get("defaultDatasetId")
+    return getattr(run, "default_dataset_id", None) or getattr(run, "defaultDatasetId", None)
+
+
 class ApifyRunner:
     """Executa um actor da Apify e devolve os itens do dataset."""
 
@@ -19,10 +28,11 @@ class ApifyRunner:
     def run(self, actor_id: str, run_input: Dict[str, Any]) -> List[dict]:
         log.info("Apify actor=%s input=%s", actor_id, {k: run_input[k] for k in list(run_input)[:3]})
         run = self.client.actor(actor_id).call(run_input=run_input)
-        if not run or not run.get("defaultDatasetId"):
+        dataset_id = _dataset_id(run)
+        if not dataset_id:
             log.warning("Actor %s sem dataset de saída", actor_id)
             return []
-        items = self.client.dataset(run["defaultDatasetId"]).list_items().items
+        items = self.client.dataset(dataset_id).list_items().items
         log.info("Actor %s retornou %d itens", actor_id, len(items))
         return items
 
