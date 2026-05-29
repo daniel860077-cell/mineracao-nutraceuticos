@@ -1,0 +1,52 @@
+name: Mineração diária de nutracêuticos
+
+on:
+  schedule:
+    # 11:00 UTC = 08:00 no horário de Brasília (UTC-3)
+    - cron: "0 11 * * *"
+  workflow_dispatch: {}   # permite rodar manualmente pelo botão "Run workflow"
+
+permissions:
+  contents: write          # para salvar o estado de deduplicação de volta no repo
+
+concurrency:
+  group: mineracao-daily
+  cancel-in-progress: false
+
+jobs:
+  minerar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Rodar mineração e enviar no Telegram
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python run_daily.py -v
+
+      - name: Salvar estado de deduplicação
+        if: always()
+        run: |
+          git config user.name  "mineracao-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if [ -n "$(git status --porcelain data/mineracao.db)" ]; then
+            git add data/mineracao.db
+            git commit -m "chore: atualiza estado de deduplicação [skip ci]"
+            git push
+          else
+            echo "Sem mudança no estado de deduplicação."
+          fi

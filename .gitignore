@@ -1,0 +1,8 @@
+.env
+.DS_Store
+._*
+.venv/
+__pycache__/
+*.pyc
+mineracao.log
+# data/mineracao.db é versionado de propósito (estado de deduplicação na nuvem)

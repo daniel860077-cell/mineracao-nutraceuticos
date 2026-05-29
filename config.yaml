@@ -1,0 +1,74 @@
+# ============================================================
+# Configuração do Bot de Mineração de Nutracêuticos
+# ============================================================
+
+# Palavras-chave do nicho. Alimentam as buscas em todas as fontes.
+keywords:
+  - emagrecedor
+  - colágeno
+  - melatonina
+  - biotina
+  - termogênico
+  - cápsulas
+  - psyllium
+  - magnésio dimalato
+  - creatina
+  - ômega 3
+
+# Quantos produtos entregar por dia (PRD pede 5-6)
+daily_count: 6
+
+# Janela de deduplicação: produtos entregues nos últimos N dias
+# não voltam na listagem diária.
+dedup_window_days: 15
+
+# País / locale das buscas
+country: BR
+language: pt-BR
+
+# ------------------------------------------------------------
+# Entrega: "telegram" ou "discord"
+# ------------------------------------------------------------
+delivery: telegram
+
+# ------------------------------------------------------------
+# Fontes. Ative/desative e ajuste os parâmetros por fonte.
+#
+# IMPORTANTE: os "actor_id" abaixo são sugestões da Apify Store.
+# Antes do primeiro uso, CONFIRME cada actor em https://apify.com/store
+# (nomes/donos mudam) e ajuste o input em miner/sources/<fonte>.py
+# se o schema do actor for diferente.
+# ------------------------------------------------------------
+sources:
+  meta_ads:
+    enabled: true
+    actor_id: "curious_coder/facebook-ads-library-scraper"  # 13M+ runs
+    # Anúncio ativo há mais de N dias = produto validado
+    min_active_days: 5
+    count_per_keyword: 30
+
+  mercado_livre:
+    enabled: true
+    actor_id: "karamelo/mercadolivre-scraper-brasil-portugues"  # BR, 36k+ runs
+    # Mínimo de vendas declaradas para considerar tração
+    min_sales: 50
+    max_pages: 2          # páginas de busca por keyword
+    promoted: true        # incluir patrocinados
+
+  shopee:
+    enabled: true
+    actor_id: "gio21/shopee-scraper"  # 11k+ runs
+    min_sales: 100
+    max_items_per_keyword: 30
+
+  amazon:
+    enabled: true
+    actor_id: "junglee/amazon-bestsellers"  # 200k+ runs
+    # Categoria Saúde e Cuidados Pessoais (BR). A URL deve conter "bestsellers".
+    category_url: "https://www.amazon.com.br/gp/bestsellers/hpc/"
+    max_items: 50
+
+  google:
+    enabled: true
+    actor_id: "apify/google-search-scraper"  # oficial Apify
+    results_per_keyword: 10
