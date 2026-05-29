@@ -1,0 +1,51 @@
+name: Escutar comandos do Telegram
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # a cada 30 minutos
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mineracao-repo       # mesmo grupo do diário p/ não colidir no push
+  cancel-in-progress: false
+
+jobs:
+  escutar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Processar comandos do Telegram
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python listen.py
+
+      - name: Salvar nicho escolhido
+        if: always()
+        run: |
+          git config user.name  "mineracao-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/state.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Nenhum comando novo."
+            exit 0
+          fi
+          git commit -m "chore: atualiza nicho via Telegram [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push && break
+            echo "push falhou, tentativa $i; aguardando..."; sleep 5
+          done

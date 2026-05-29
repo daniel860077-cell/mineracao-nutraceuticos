@@ -10,7 +10,7 @@ permissions:
   contents: write          # para salvar o estado de deduplicação de volta no repo
 
 concurrency:
-  group: mineracao-daily
+  group: mineracao-repo      # compartilhado com o escutador p/ não colidir no push
   cancel-in-progress: false
 
 jobs:
@@ -38,15 +38,18 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python run_daily.py -v
 
-      - name: Salvar estado de deduplicação
+      - name: Salvar estado (dedup + nicho)
         if: always()
         run: |
           git config user.name  "mineracao-bot"
           git config user.email "actions@users.noreply.github.com"
-          if [ -n "$(git status --porcelain data/mineracao.db)" ]; then
-            git add data/mineracao.db
-            git commit -m "chore: atualiza estado de deduplicação [skip ci]"
-            git push
-          else
-            echo "Sem mudança no estado de deduplicação."
+          git add data/mineracao.db data/state.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Sem mudança de estado."
+            exit 0
           fi
+          git commit -m "chore: atualiza estado (dedup/nicho) [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push && break
+            echo "push falhou, tentativa $i; aguardando..."; sleep 5
+          done

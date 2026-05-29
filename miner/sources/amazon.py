@@ -53,6 +53,5 @@ class AmazonSource(Source):
                     raw=it,
                 )
             )
-        # se houver keywords casadas, prioriza-as; senão devolve a categoria toda
-        nicho = [p for p in products if p.keyword]
-        return nicho if nicho else products
+        # só retorna itens que casam com o nicho (evita ruído fora do nicho)
+        return [p for p in products if p.keyword]
