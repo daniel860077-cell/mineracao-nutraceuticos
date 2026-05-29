@@ -16,9 +16,9 @@ class ApifyRunner:
     def __init__(self, token: str):
         self.client = ApifyClient(token)
 
-    def run(self, actor_id: str, run_input: Dict[str, Any], timeout_secs: int = 600) -> List[dict]:
+    def run(self, actor_id: str, run_input: Dict[str, Any]) -> List[dict]:
         log.info("Apify actor=%s input=%s", actor_id, {k: run_input[k] for k in list(run_input)[:3]})
-        run = self.client.actor(actor_id).call(run_input=run_input, timeout_secs=timeout_secs)
+        run = self.client.actor(actor_id).call(run_input=run_input)
         if not run or not run.get("defaultDatasetId"):
             log.warning("Actor %s sem dataset de saída", actor_id)
             return []
