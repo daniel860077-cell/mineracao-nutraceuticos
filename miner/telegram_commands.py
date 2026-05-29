@@ -11,12 +11,14 @@ log = logging.getLogger("miner.tg_commands")
 HELP = (
     "🤖 <b>Bot de Mineração</b>\n\n"
     "Comandos:\n"
-    "• <code>/buscar termo1, termo2, termo3</code> — define o nicho/categoria a pesquisar "
-    "(qualquer nicho: nutracêuticos, eletrônicos, moda...).\n"
+    "• <code>/buscar termo1, termo2</code> — define o nicho a pesquisar.\n"
     "• <code>/status</code> — mostra o nicho atual.\n"
+    "• <code>/bloquear marca1, marca2</code> — ignora marcas/redes (ex: gigantes).\n"
+    "• <code>/desbloquear marca1</code> — volta a permitir uma marca.\n"
+    "• <code>/bloqueados</code> — lista as marcas bloqueadas.\n"
     "• <code>/ajuda</code> — esta mensagem.\n\n"
-    "Depois de definir, o bot passa a minerar esses termos na próxima execução "
-    "e te envia os 5-6 produtos validados do dia."
+    "Depois de definir, o bot minera esses termos na próxima execução e te "
+    "envia os 5-6 produtos validados do dia."
 )
 
 
@@ -52,6 +54,9 @@ def register_commands(token: str) -> None:
         requests.post(_api(token, "setMyCommands"), json={"commands": [
             {"command": "buscar", "description": "Definir o nicho/categoria a pesquisar"},
             {"command": "status", "description": "Ver o nicho atual"},
+            {"command": "bloquear", "description": "Ignorar marcas/redes (ex: gigantes)"},
+            {"command": "desbloquear", "description": "Voltar a permitir uma marca"},
+            {"command": "bloqueados", "description": "Listar marcas bloqueadas"},
             {"command": "ajuda", "description": "Como usar o bot"},
         ]}, timeout=30)
     except requests.RequestException:
@@ -109,6 +114,32 @@ def process_commands(secrets: Dict[str, Any], state: Dict[str, Any]) -> Tuple[Di
                 _send(token, reply_to,
                       "Nenhum nicho definido ainda — usando a lista padrão. "
                       "Defina com <code>/buscar ...</code>")
+        elif low.startswith("/bloquear"):
+            raw = re.sub(r"^/\w+(@\w+)?\s*", "", text)
+            novos = [t.lower() for t in _parse_keywords(raw)]
+            if not novos:
+                _send(token, reply_to,
+                      "Use assim: <code>/bloquear loreal, drogal</code>")
+            else:
+                bl = state.get("blocklist") or []
+                add = [t for t in novos if t not in bl]
+                state["blocklist"] = bl + add
+                _send(token, reply_to,
+                      f"🚫 Bloqueadas (+{len(add)}). Total: {len(state['blocklist'])}.\n"
+                      "Vale a partir da próxima execução.")
+        elif low.startswith("/desbloquear"):
+            raw = re.sub(r"^/\w+(@\w+)?\s*", "", text)
+            rem = {t.lower() for t in _parse_keywords(raw)}
+            bl = state.get("blocklist") or []
+            state["blocklist"] = [t for t in bl if t.lower() not in rem]
+            _send(token, reply_to,
+                  f"✅ Desbloqueadas. Total agora: {len(state['blocklist'])}.")
+        elif low.startswith("/bloqueados"):
+            bl = state.get("blocklist") or []
+            if bl:
+                _send(token, reply_to, "🚫 Marcas bloqueadas:\n• " + "\n• ".join(bl))
+            else:
+                _send(token, reply_to, "Nenhuma marca bloqueada.")
         elif low.startswith(("/ajuda", "/start", "/help")):
             _send(token, reply_to, HELP)
 
