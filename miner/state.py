@@ -6,10 +6,28 @@ from typing import Any, Dict, List
 
 STATE_PATH = Path(__file__).resolve().parent.parent / "data" / "state.json"
 
+# Marcas/redes "gigantes" ignoradas por padrão (editável via Telegram).
+# Objetivo: tirar só os nomes muito grandes, mantendo marcas emergentes.
+_SEED_BLOCKLIST = [
+    # multinacionais / grandes marcas
+    "loreal", "l'oréal", "l'oreal", "natura", "boticário", "boticario", "avon",
+    "nestlé", "nestle", "unilever", "johnson", "bayer", "gsk",
+    # grandes redes de farmácia
+    "drogal", "drogasil", "droga raia", "drogaraia", "raia", "pague menos",
+    "paguemenos", "ultrafarma", "pacheco", "panvel", "são joão", "extrafarma",
+    # marketplaces / grandes varejistas
+    "amazon", "mercado livre", "mercadolivre", "magazine luiza", "magalu",
+    "americanas", "casas bahia", "shopee", "aliexpress",
+    # gigantes de suplemento
+    "growth suplementos", "max titanium", "integralmedica", "integralmédica",
+    "probiótica", "probiotica",
+]
+
 _DEFAULT: Dict[str, Any] = {
     "keywords": [],          # nicho escolhido via Telegram; vazio = usa config.yaml
     "telegram_offset": 0,    # último update_id processado do getUpdates
     "amazon_category_url": "",  # opcional: categoria de bestsellers por nicho
+    "blocklist": list(_SEED_BLOCKLIST),  # marcas/domínios a ignorar
 }
 
 

@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 
 from .db import Store
 from .delivery import deliver
+from .filters import apply_blocklist
 from .models import Product
 from .scoring import rank
 from .sources import REGISTRY
@@ -51,6 +52,13 @@ def run(cfg: Dict[str, Any], dry_run: bool = False) -> List[Product]:
             log.exception("Fonte %s falhou completamente: %s", name, exc)
 
     log.info("Total coletado: %d", len(collected))
+
+    # 1.5) Remove marcas/redes gigantes (lista de bloqueio editável via Telegram)
+    blocklist = state.get("blocklist") or []
+    before = len(collected)
+    collected = apply_blocklist(collected, blocklist)
+    log.info("Após filtro de marcas (%d bloqueios): %d (-%d)",
+             len(blocklist), len(collected), before - len(collected))
 
     # 2) Deduplicação na janela de N dias (SQLite)
     store = Store()
